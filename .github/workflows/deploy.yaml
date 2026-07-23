@@ -1,0 +1,52 @@
+name: Build and Deploy Employee API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/employee-api:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/employee-api:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_PAT }}
+
+            docker pull ghcr.io/${{ github.repository_owner }}/employee-api:latest
+
+            docker stop employee-backend || true
+            docker rm employee-backend || true
+
+            docker run -d \
+              --name employee-backend \
+              --network employee-network \
+              -p 8090:8080 \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://employee-postgres:5432/employee_db \
+              -e SPRING_DATASOURCE_USERNAME=postgres \
+              -e SPRING_DATASOURCE_PASSWORD=postgres \
+              ghcr.io/${{ github.repository_owner }}/employee-api:latest
