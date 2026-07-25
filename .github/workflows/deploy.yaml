@@ -45,7 +45,7 @@ jobs:
             docker run -d \
               --name employee-backend \
               --network employee-network \
-              -p 8090:8080 \
+              -p 8090:8090 \
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://employee-postgres:5432/employee_db \
               -e SPRING_DATASOURCE_USERNAME=postgres \
               -e SPRING_DATASOURCE_PASSWORD=postgres \
