@@ -1,4 +1,4 @@
-package com.apram.employee_management_api.config;
+package com.apram.employeemanagementapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
